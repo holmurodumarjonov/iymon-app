@@ -1,0 +1,24 @@
+# Keeps the Iymon App Supabase project awake: free projects are paused after 7 days without requests.
+# It only reads, with the same publishable key that ships inside the app, so no secret is needed.
+name: Supabase keep-alive
+
+on:
+  schedule:
+    - cron: "17 3 * * *" # every day, 08:17 Tashkent
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Read one rule from each content table
+        env:
+          URL: https://vkivxqhmlbnzbhwbnnvh.supabase.co
+          KEY: sb_publishable_c80VqVna_L32IcbGioBIew_XwCCuL4h
+        run: |
+          for t in block_rules reminders duas; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" "$URL/rest/v1/$t?select=*&limit=1" -H "apikey: $KEY")
+            echo "$t: $code"
+            if [ "$t" = "block_rules" ] && [ "$code" != "200" ]; then exit 1; fi
+          done
